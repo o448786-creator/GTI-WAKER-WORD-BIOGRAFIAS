@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTI WAKER WORD - BIOGRAFIAS</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    background-color: #02070a;
+    background-image: radial-gradient(circle, #071624 0%, #010508 100%);
+    color: #a4e0f4;
+    font-family: 'Courier New', Courier, monospace;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .batcomputer-container {
+    width: 1024px;
+    height: 600px;
+    border: 1px solid #1a3a4a;
+    background: rgba(2, 12, 22, 0.85);
+    box-shadow: 0 0 30px rgba(0, 162, 232, 0.2), inset 0 0 20px rgba(0, 162, 232, 0.1);
+    position: relative;
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+  }
+  .batcomputer-container::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 10;
+    background-size: 100% 4px, 6px 100%;
+    pointer-events: none;
+  }
+  header {
+    border-bottom: 2px solid #23526d;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  header h1 { font-size: 24px; letter-spacing: 3px; color: #cbebff; text-shadow: 0 0 10px rgba(203, 235, 255, 0.5); }
+  header .system-status { font-size: 14px; color: #4b829e; }
+  .main-layout { display: flex; flex: 1; gap: 30px; height: calc(100% - 65px); }
+  .left-panel { width: 55%; display: flex; flex-direction: column; gap: 20px; }
+  .character-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    background: rgba(3, 22, 38, 0.6);
+    padding: 10px;
+    border: 1px solid #1a3a4a;
+  }
+  .char-btn {
+    aspect-ratio: 1;
+    background-color: #051827;
+    border: 2px solid #23526d;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s ease;
+  }
+  .char-btn img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    filter: grayscale(80%) contrast(120%) brightness(80%);
+    mix-blend-mode: luminosity;
+  }
+  .char-btn:hover, .char-btn.active {
+    border-color: #3fe0ff;
+    box-shadow: 0 0 12px rgba(63, 224, 255, 0.8);
+    transform: scale(1.05);
+    z-index: 2;
+  }
+  .char-btn:hover img, .char-btn.active img {
+    filter: grayscale(20%) contrast(110%) brightness(100%);
+    mix-blend-mode: normal;
+  }
+  .bio-textbox {
+    flex: 1;
+    border: 1px solid #1a3a4a;
+    background: rgba(1, 10, 18, 0.8);
+    padding: 15px;
+    overflow-y: auto;
+    position: relative;
+  }
+  .bio-textbox::-webkit-scrollbar { width: 6px; }
+  .bio-textbox::-webkit-scrollbar-track { background: rgba(5, 24, 39, 0.5); }
+  .bio-textbox::-webkit-scrollbar-thumb { background: #23526d; border-radius: 3px; }
+  .bio-textbox::-webkit-scrollbar-thumb:hover { background: #3fe0ff; }
+  .bio-attributes { margin-bottom: 12px; border-bottom: 1px dashed #23526d; padding-bottom: 8px; font-size: 13px; line-height: 1.6; }
+  .bio-attributes span { color: #4b829e; font-weight: bold; }
+  .bio-text { font-size: 14px; line-height: 1.5; color: #cbebff; text-align: justify; }
+  .right-panel {
+    width: 45%;
+    position: relative;
+    border: 1px solid #1a3a4a;
+    background: linear-gradient(180deg, rgba(5,24,39,0.4) 0%, rgba(1,10,18,0.7) 100%);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    overflow: hidden;
+  }
+  .right-panel::after {
+    content: "";
+    position: absolute;
+    bottom: 0; width: 100%; height: 150px;
+    background: linear-gradient(transparent, rgba(2, 7, 10, 0.9));
+    z-index: 2;
+  }
+  #char-render {
+    height: 95%; object-fit: contain; z-index: 1;
+    filter: drop-shadow(0 0 15px rgba(0, 162, 232, 0.4)) contrast(105%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateX(20px); opacity: 0;
+  }
+  #char-render.loaded { transform: translateX(0); opacity: 1; }
+  #char-name-big {
+    position: absolute; top: 20px; left: 20px;
+    font-size: 40px; font-weight: bold; text-transform: uppercase;
+    color: rgba(63, 224, 255, 0.15); letter-spacing: 5px; z-index: 0;
+  }
+</style>
+</head>
+<body>
+<div class="batcomputer-container">
+  <header>
+    <h1 id="menu-title">GTI // DATA_BIOS</h1>
+    <div class="system-status">SYS_STATUS: OFFLINE [LOCAL_NODE]</div>
+  </header>
+  <div class="main-layout">
+    <div class="left-panel">
+      <div class="character-grid" id="grid-container"></div>
+      <div class="bio-textbox" id="bio-box">
+        <div class="bio-attributes" id="bio-attrs"></div>
+        <div class="bio-text" id="bio-description"></div>
+      </div>
+    </div>
+    <div class="right-panel">
+      <div id="char-name-big">BATMAN</div>
+      <img id="char-render" src="" alt="Character Render">
+    </div>
+  </div>
+</div>
+
+<script>
+const charactersData = [
+  {
+    id: "batman",
+    name: "batman",
+    realName: "indivino",
+    alias: "ale ou lele",
+    firstAppearance: "Detective Comics #27 (Maio de 1939)",
+    description: "Após testemunhar o assassinato brutal de seus pais quando criança, Bruce Wayne jurou vingança contra os criminosos de Gotham. Ele treinou seu corpo e mente à perfeição humana para se tornar o Batman.",
+    thumb: "Screenshot 2026-09-08 14.11.06.png",
+    render: "Screenshot 2026-09-08 14.11.06.png"
+  },
+  {
+    id: "joker",
+    name: "joker",
+    realName: "M. WALKER",
+    alias: "arcanjo vanpiro, cavaleiro da luz e etc",
+    firstAppearance: "Batman #1 (1940)",
+    description: "Surgindo das sombras digitais de Gotham, M. Walker é um vigilante enigmático cuja existência flutua entre o mito urbano e a realidade cibernética. Inspirado por um coletivo global de mentes brilhantes e rebeldes (conhecidos no submundo como Walkers ele adotou a identidade de Arcanjo Vampiro Azul devido ao seu traje furtivo com detalhes em neon ciano e à sua capacidade de sugar dados e energia das redes criminosas da cidade.Diferente de outros justiceiros sombrios, Walker é chamado por alguns de Cavaleiro da Luz. Ele utiliza frequências sonoras de alta fidelidade e pulsações luminosas para desorientar seus oponentes, transformando o próprio campo de batalha em uma sinfonia visual e tática. Seu capuz icônico e sua máscara cobrem totalmente o rosto, deixando visíveis apenas seus olhos modificados, que brilham em sintonia com as batidas de seus dispositivos tecnológicos.O Departamento de Polícia de Gotham (GCPD) o co.",
+    thumb: "Screenshot 2026-09-08 14.17.20.png",
+    render: "Screenshot 2026-09-08 14.17.20.png"
+  },
+  {
+    id: "catwoman",
+    name: "Gambalto Walker",
+    realName: "Gambalto Walker",
+    alias: "piaui, etc.",
+    firstAppearance: "nordeste do brasil #1 (2099)",
+    description: "mestre em armas Gambalto Walker é um atirador formidavel capaz de atingir um oponente na cabeça a 600 metros de distancia ou mais.",
+    thumb: "gabriel.png",
+    render: "gabriel.png"
+  },
+  {
+    id: "mord",
+    name: "Orazio",
+    realName: "Orazio walker",
+    alias: "O. Walker, luz do amanha, etc",
+    firstAppearance: "walker word #30 (2100)",
+    description: "realista e mute tarefas, Orazio walker ajuda nas guerras, projetos e atividades dos walkers, um amigo fiel de M. Walker.",
+    thumb: "joão1.png",
+    render: "joão 2.png"
+  },
+  {
+    id: "chinobo",
+    name: "chinobo",
+    realName: "chinobo walkerg",
+    alias: "patinho, guachinim etc.",
+    firstAppearance: "Batman #1 (1940)",
+    description: "Mestre em furtividade e tecnologia, chinobo é irmão do m. walker e dos outros walkers uma jovem muito boa e moradora do walker word.",
+    thumb: "sophie.png",
+    render: "sophie.png"
+  },
+  {
+    id: "nerd",
+    name: "nerd",
+    realName: "nerd",
+    alias: "fabiotaius",
+    firstAppearance: "jujutsu kaisen (2099)",
+    description: "nascido em green hills fabiotaius é um jovem impressionante com multiplas habilidades.",
+    thumb: "fabio.png",
+    render: "fabio.png"
+  },
+  {
+    id: "estrela",
+    name: "estrela",
+    realName: "Elin walker e kenji walker",
+    alias: "dupla mistica",
+    firstAppearance: "jujutsu kaisen (2098)",
+    description: "esquadrão estrelar fomado por Elin e kenji ajudão os seus irmãos walkwers a manter o walker word seguro.",
+    thumb: "mariamatheus.png",
+    render: "mariamatheus.png"
+  },
+    {
+    id: "irmãos",
+    name: "estrela",
+    realName: "quadro de comemoração aos irmãos walkers do brasil",
+    alias: "quadro de comemoração aos irmãos walkers do brasil",
+    firstAppearance: "paradaise (2100)",
+    description: "quadro de comemoração aos irmãos walkers do brasil, representa os walkwers brasileiros no planeta junto dos walkers argentinos, peruences,bolivianos e os outros na america do sul .",
+    thumb: "imãos.png",
+    render: "imãos.png"
+  }
+];
+
+function selectCharacter(id) {
+  const char = charactersData.find(c => c.id === id);
+  if (!char) return;
+
+  document.querySelectorAll('.char-btn').forEach(btn => btn.classList.remove('active'));
+  const activeBtn = document.getElementById(`btn-${id}`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  document.getElementById('bio-attrs').innerHTML = `
+    <span>NOME REAL:</span> ${char.realName}<br>
+    <span>ALIAS:</span> ${char.alias}<br>
+    <span>PRIMEIRA APARIÇÃO:</span> ${char.firstAppearance}
+  `;
+  document.getElementById('bio-description').innerText = char.description;
+  document.getElementById('char-name-big').innerText = char.name;
+
+  const renderImg = document.getElementById('char-render');
+  renderImg.classList.remove('loaded');
+  renderImg.src = char.render;
+  renderImg.onload = () => renderImg.classList.add('loaded');
+}
+
+function init() {
+  const grid = document.getElementById('grid-container');
+  charactersData.forEach(char => {
+    const btn = document.createElement('button');
+    btn.className = 'char-btn';
+    btn.id = `btn-${char.id}`;
+    btn.innerHTML = `<img src="${char.thumb}" alt="${char.name}">`;
+    btn.onclick = () => selectCharacter(char.id);
+    grid.appendChild(btn);
+  });
+  if (charactersData.length > 0) {
+    selectCharacter(charactersData[0].id);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
